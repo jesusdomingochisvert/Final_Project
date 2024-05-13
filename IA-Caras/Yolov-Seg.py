@@ -38,21 +38,21 @@ for i, box in enumerate(boxes):
 -------------------------------------------------------------------------------------------------------------------
 
 
-# Definir el tamaño de los píxeles
-pixel_size = 30
+# Definir el porcentaje de la resolución de la imagen que será el tamaño de los píxeles
+pixel_percentage = 0.1  # 1%
 
 # Obtener todas las imágenes en la carpeta 'imagenes_recortadas'
 image_paths = glob.glob('imagenes_recortadas\*.jpg')
 
 # Leer la imagen original
-img_original = cv2.imread("imagenes_prueba\c_test_1.jpg")
+img_original = cv2.imread("imagenes_prueba\meeting-business-leaders.jpg")
 
 for i, image_path in enumerate(image_paths):
     # Leer la imagen
     img = cv2.imread(image_path)
 
-    # Asegurarse de que el tamaño de los píxeles no es mayor que la altura o la anchura de la imagen
-    pixel_size = min(pixel_size, img.shape[0], img.shape[1])
+    # Calcular el tamaño de los píxeles en función de la resolución de la imagen
+    pixel_size = max(1, int(min(img.shape[0], img.shape[1]) * pixel_percentage))
 
     # Reducir la resolución de la imagen
     small = cv2.resize(img, (img.shape[1] // pixel_size, img.shape[0] // pixel_size), interpolation=cv2.INTER_LINEAR)
@@ -61,7 +61,7 @@ for i, image_path in enumerate(image_paths):
     pixelated = cv2.resize(small, (img.shape[1], img.shape[0]), interpolation=cv2.INTER_NEAREST)
 
     # Guardar la imagen pixelada
-    cv2.imwrite(f"imagenes_recortadas\cara_pixelado_{i}.jpg", pixelated)
+    cv2.imwrite(f"imagenes_recortadas\rostro_pixelado_{i}.jpg", pixelated)
 
     # Reasignar el rostro pixelado a su posición original en la imagen
     top_left_x = int(boxes[i].xyxy.tolist()[0][0])
@@ -73,5 +73,6 @@ for i, image_path in enumerate(image_paths):
 
 # Guardar la imagen original con los rostros pixelados reasignados
 cv2.imwrite("imagen_resultado\imagen_procesada.jpg", img_original)
+
 
 
