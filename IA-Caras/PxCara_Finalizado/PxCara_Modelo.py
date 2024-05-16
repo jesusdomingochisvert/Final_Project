@@ -1,16 +1,13 @@
 import cv2
 from ultralytics import YOLO
+from keras.models import load_model
 import tensorflow as tf
+from keras.preprocessing import image
 
-def load_model(model_path):
-    """
-    Cargar el modelo de clasificación de caras.
-    """
-    return tf.keras.models.load_model(model_path)
 
 def process_image_with_face_detection_and_age_classification(image_path, age_model):
     # Cargar el modelo YOLOv8 para detección de caras
-    model_face_detection = YOLO("yolov8n-face.pt")
+    model_face_detection = YOLO("/content/drive/MyDrive/IA & DB/PIA/Proyecto Lorenzo/yolov8n-face.pt")
     
     # Realizar la detección de caras en la imagen
     results = model_face_detection(image_path)
@@ -50,7 +47,7 @@ def process_image_with_face_detection_and_age_classification(image_path, age_mod
         # Si la cara se clasifica como menor de edad, aplicar pixelado
         if is_minor:
             # Definir el porcentaje de la resolución de la imagen que será el tamaño de los píxeles
-            pixel_percentage = 0.15  # 15%
+            pixel_percentage = 0.1  # 1%
 
             # Calcular el tamaño de los píxeles en función de la resolución de la imagen
             pixel_size = max(1, int(min(face.shape[0], face.shape[1]) * pixel_percentage))
@@ -81,12 +78,12 @@ def process_image_with_face_detection_and_age_classification(image_path, age_mod
     return img_original
 
 # Cargar el modelo de clasificación de caras
-age_model_path = 'best_model.keras'
+age_model_path = '/content/drive/MyDrive/IA & DB/PIA/Proyecto Lorenzo/modelo_testeo_para_tomas_v2.h5'
 age_model = load_model(age_model_path)
 
 # Ejemplo de uso de la función
-image_path = 'imagenes_prueba/meeting-business-leaders.jpg'
+image_path = '/content/drive/MyDrive/IA & DB/PIA/Proyecto Lorenzo/imagenes_prueba/meeting-business-leaders.jpg'
 processed_image = process_image_with_face_detection_and_age_classification(image_path, age_model)
 
 # Guardar la imagen procesada
-cv2.imwrite("imagen_resultado/imagen_procesada.jpg", processed_image)
+cv2.imwrite("/content/drive/MyDrive/IA & DB/PIA/Proyecto Lorenzo/imagen_resultado/imagen_procesada.jpg", processed_image)
