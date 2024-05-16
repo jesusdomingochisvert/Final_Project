@@ -50,7 +50,7 @@ def process_image_with_face_detection_and_age_classification(image_path, age_mod
         # Si la cara se clasifica como menor de edad, aplicar pixelado
         if is_minor:
             # Definir el porcentaje de la resolución de la imagen que será el tamaño de los píxeles
-            pixel_percentage = 0.1  # 1%
+            pixel_percentage = 0.15  # 15%
 
             # Calcular el tamaño de los píxeles en función de la resolución de la imagen
             pixel_size = max(1, int(min(face.shape[0], face.shape[1]) * pixel_percentage))
