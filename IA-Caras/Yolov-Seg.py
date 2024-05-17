@@ -6,10 +6,6 @@ import glob
 
 ultralytics.checks()
 
-
------------------------------------------------------------------------------------------------------------------
-
-
 model = YOLO("yolov8n-face.pt")
 
 img_path = 'imagenes_prueba\meeting-business-leaders.jpg'
@@ -33,10 +29,6 @@ for i, box in enumerate(boxes):
 
     # Guardar la cara recortada como una imagen individual
     cv2.imwrite(f"imagenes_recortadas\cara_{i}.jpg", face)
-
-
--------------------------------------------------------------------------------------------------------------------
-
 
 # Definir el porcentaje de la resolución de la imagen que será el tamaño de los píxeles
 pixel_percentage = 0.1  # 1%

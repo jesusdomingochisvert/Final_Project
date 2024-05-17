@@ -1,0 +1,22 @@
+version: '3'
+
+services:
+  api-gateway:
+    build:
+      context: ./api_gateway
+      dockerfile: Dockerfile
+    ports:
+      - "5000:5000"
+    networks:
+      - backend
+
+  ia_container:
+    build:
+      context: ./IA-Caras
+      dockerfile: Dockerfile
+    networks:
+      - backend
+
+networks:
+  backend:
+    driver: bridge
