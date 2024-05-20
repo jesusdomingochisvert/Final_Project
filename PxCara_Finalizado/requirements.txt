@@ -1,2 +1,7 @@
-Flask
-requests
+Flask==3.0.0
+requests==2.31.0
+opencv-python==4.8.1.78
+ultralytics==8.2.15
+tensorflow==2.14.0
+keras==2.14.0
+numpy==1.26.1
