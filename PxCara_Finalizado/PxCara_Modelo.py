@@ -1,4 +1,8 @@
+import io
+import os
+
 import cv2
+from PIL import Image
 from ultralytics import YOLO
 from keras.models import load_model
 import tensorflow as tf
@@ -83,16 +87,12 @@ def process_image_with_face_detection_and_age_classification(image_path, age_mod
 
 @app.route('/process_images', methods=['POST'])
 def process_image():
-    if 'image' not in request.files:
-        return jsonify({'error': 'No image provided'}), 400
 
-    print(request.files)
-    image_file = request.files['image']
-    print(image_file)
+    image_data = request.data
+    print(image_data)
 
-    image_data = image_file.read()
-    nparr = np.frombuffer(image_data, np.uint8)
-    img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+    img = Image.open(io.BytesIO(image_data))
+    print(img)
 
     model = 'modelo_testeo_para_tomas_v2.h5'
     age_model = load_model(model)
