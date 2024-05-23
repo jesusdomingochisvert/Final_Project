@@ -1,18 +1,20 @@
+import io
+import os
+
 import cv2
+from PIL import Image
 from ultralytics import YOLO
 from keras.models import load_model
 import tensorflow as tf
-from keras.preprocessing import image
 from flask import Flask, request, jsonify
 import numpy as np
-import time
 
 app = Flask(__name__)
 
 
 def process_image_with_face_detection_and_age_classification(image_path, age_model):
     # Cargar el modelo YOLOv8 para detección de caras
-    model_face_detection = YOLO("/content/drive/MyDrive/IA & DB/PIA/Proyecto Lorenzo/yolov8n-face.pt")
+    model_face_detection = YOLO("yolov8n-face.pt")
     
     # Realizar la detección de caras en la imagen
     results = model_face_detection(image_path)
@@ -83,15 +85,14 @@ def process_image_with_face_detection_and_age_classification(image_path, age_mod
     return img_original
 
 
-@app.route('/process_image', methods=['POST'])
+@app.route('/process_images', methods=['POST'])
 def process_image():
-    if 'image' not in request.files:
-        return jsonify({'error': 'No image provided'}), 400
 
-    image_file = request.files['image']
-    image_data = image_file.read()
-    nparr = np.frombuffer(image_data, np.uint8)
-    img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+    image_data = request.data
+    print(image_data)
+
+    img = Image.open(io.BytesIO(image_data))
+    print(img)
 
     model = 'modelo_testeo_para_tomas_v2.h5'
     age_model = load_model(model)
@@ -99,6 +100,7 @@ def process_image():
     processed_image = process_image_with_face_detection_and_age_classification(img, age_model)
 
     return jsonify(processed_image), 200
+
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5001)
