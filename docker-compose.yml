@@ -3,8 +3,8 @@ version: '3.8'
 services:
   api-gateway:
     build:
-      context: ./api_gateway
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: Dockerfile_api_gateway
     restart: always
     ports:
       - "5000:5000"
@@ -13,8 +13,8 @@ services:
 
   ia_container:
     build:
-      context: ./PxCara_Finalizado
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: Dockerfile_ia_container
     restart: always
     ports:
       - "5001:5001"

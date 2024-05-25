@@ -12,9 +12,8 @@ def process_image():
         return "No image provided", 400
 
     image_file = request.files['image']
-    image_data = image_file
 
-    response = requests.post(IA_SERVICE_URL, data=image_data)
+    response = requests.post(IA_SERVICE_URL, files={'image': (image_file.filename, image_file.read(), image_file.content_type)})
 
     if response.status_code != 200:
         return jsonify({'error': 'Failed to process image', 'details': response.text}), response.status_code

@@ -14,15 +14,15 @@ app = Flask(__name__)
 
 def process_image_with_face_detection_and_age_classification(image_path, age_model):
     # Cargar el modelo YOLOv8 para detección de caras
-    model_face_detection = YOLO("yolov8n-face.pt")
-    
+    model_face_detection = YOLO("/app/PxCara_Finalizado/yolov8n-face.pt")
+
     # Realizar la detección de caras en la imagen
     results = model_face_detection(image_path)
     boxes = results[0].boxes
-    
+
     # Leer la imagen original
     img_original = cv2.imread(image_path)
-    
+
     # Lista para almacenar las imágenes de caras redimensionadas
     resized_faces = []
     
@@ -87,14 +87,16 @@ def process_image_with_face_detection_and_age_classification(image_path, age_mod
 
 @app.route('/process_images', methods=['POST'])
 def process_image():
+    if 'image' not in request.files:
+        return "No image provided", 400
 
-    image_data = request.data
-    print(image_data)
+    image_file = request.files['image']
+    print(len(image_file.read()))
+    print(image_file)
+    print(image_file.read())
+    img = cv2.imdecode(np.frombuffer(image_file.read(), dtype=np.uint8), cv2.IMREAD_COLOR)
 
-    img = Image.open(io.BytesIO(image_data))
-    print(img)
-
-    model = 'modelo_testeo_para_tomas_v2.h5'
+    model = '/app/modelos/modelo_final_MNV2.h5'
     age_model = load_model(model)
 
     processed_image = process_image_with_face_detection_and_age_classification(img, age_model)
