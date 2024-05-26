@@ -1,113 +1,90 @@
-import io
 import os
-
 import cv2
-from PIL import Image
 from ultralytics import YOLO
 from keras.saving import load_model
-import tensorflow as tf
 from flask import Flask, request, jsonify
+import tensorflow as tf
 import numpy as np
 
 app = Flask(__name__)
 
+# Ruta del volumen compartido para guardar las imágenes procesadas
+PROCESSED_IMAGES_DIR = './shared/processed_images'
+if not os.path.exists(PROCESSED_IMAGES_DIR):
+    os.makedirs(PROCESSED_IMAGES_DIR)
 
-def process_image_with_face_detection_and_age_classification(image_path, age_model):
-    # Cargar el modelo YOLOv8 para detección de caras
-    model_face_detection = YOLO("./shared/yolov8n-face.pt")
+def load_face_detection_model():
+    return YOLO("./shared/yolov8n-face.pt")
 
-    # Realizar la detección de caras en la imagen
+def detect_faces(image_path, model_face_detection):
     results = model_face_detection(image_path)
-    boxes = results[0].boxes
+    return results[0].boxes
 
-    # Leer la imagen original
-    img_original = cv2.imread(image_path)
+def read_image(image_path):
+    img = cv2.imread(image_path)
+    if img is None:
+        raise FileNotFoundError(f"Image at path {image_path} could not be found or read.")
+    return img
 
-    # Lista para almacenar las imágenes de caras redimensionadas
+def resize_face(face, size=(200, 200)):
+    return cv2.resize(face, size) if face.shape[:2] != size else face
+
+def pixelate_face(face, pixel_percentage=0.3):
+    pixel_size = max(1, int(min(face.shape[:2]) * pixel_percentage))
+    small = cv2.resize(face, (face.shape[1] // pixel_size, face.shape[0] // pixel_size), interpolation=cv2.INTER_LINEAR)
+    return cv2.resize(small, face.shape[:2][::-1], interpolation=cv2.INTER_NEAREST)
+
+def preprocess_face_for_model(face):
+    face = cv2.resize(face, (200, 200))
+    face = np.expand_dims(face, axis=0)
+    return face
+
+def process_faces(img, boxes, age_model):
     resized_faces = []
-    
-    # Iterar sobre las caras detectadas
-    for i, box in enumerate(boxes):
-        top_left_x = int(box.xyxy.tolist()[0][0])
-        top_left_y = int(box.xyxy.tolist()[0][1])
-        bottom_right_x = int(box.xyxy.tolist()[0][2])
-        bottom_right_y = int(box.xyxy.tolist()[0][3])
-
-        # Recortar la cara de la imagen
-        face = img_original[top_left_y:bottom_right_y, top_left_x:bottom_right_x]
-
-        # Redimensionar la cara a 200x200 si no lo es
-        if face.shape[0] != 200 or face.shape[1] != 200:
-            face = cv2.resize(face, (200, 200))
-
-        # Guardar la cara redimensionada en la lista
+    for box in boxes:
+        x1, y1, x2, y2 = map(int, box.xyxy[0])
+        face = img[y1:y2, x1:x2]
+        face = resize_face(face)
         resized_faces.append(face)
     
-    # Clasificar la edad para cada cara redimensionada
-    for face in resized_faces:
-        # Redimensionar la imagen para que coincida con el formato del modelo (1, 200, 200, 3)
-        face_resized = tf.expand_dims(tf.cast(face, tf.float32) / 255., axis=0)
-
-        # Predecir la edad con el modelo
-        is_minor = age_model.predict(face_resized)[0][0] > 0.5  # Suponemos que si la probabilidad es mayor a 0.5 es menor de edad
-
-        # Si la cara se clasifica como menor de edad, aplicar pixelado
+    for i, face in enumerate(resized_faces):
+        face_resized = preprocess_face_for_model(face)
+        is_minor = age_model.predict(face_resized)[0][0] > 0.5
         if is_minor:
-            # Definir el porcentaje de la resolución de la imagen que será el tamaño de los píxeles
-            pixel_percentage = 0.1  # 1%
-
-            # Calcular el tamaño de los píxeles en función de la resolución de la imagen
-            pixel_size = max(1, int(min(face.shape[0], face.shape[1]) * pixel_percentage))
-
-            # Reducir la resolución de la imagen
-            small = cv2.resize(face, (face.shape[1] // pixel_size, face.shape[0] // pixel_size), interpolation=cv2.INTER_LINEAR)
-
-            # Aumentar la resolución de la imagen a su tamaño original
-            pixelated = cv2.resize(small, (face.shape[1], face.shape[0]), interpolation=cv2.INTER_NEAREST)
-
-            # Actualizar la cara redimensionada con el pixelado
-            face[:] = pixelated
-
-    # Redimensionar las caras pixeladas a sus dimensiones originales y colocarlas en la imagen procesada
+            resized_faces[i] = pixelate_face(face)
+    
     for i, box in enumerate(boxes):
-        top_left_x = int(box.xyxy.tolist()[0][0])
-        top_left_y = int(box.xyxy.tolist()[0][1])
-        bottom_right_x = int(box.xyxy.tolist()[0][2])
-        bottom_right_y = int(box.xyxy.tolist()[0][3])
+        x1, y1, x2, y2 = map(int, box.xyxy[0])
+        resized_face = cv2.resize(resized_faces[i], (x2 - x1, y2 - y1))
+        img[y1:y2, x1:x2] = resized_face
 
-        # Redimensionar la cara a su tamaño original
-        resized_face = cv2.resize(resized_faces[i], (bottom_right_x - top_left_x, bottom_right_y - top_left_y))
+    return img
 
-        # Reasignar la cara redimensionada a su posición original en la imagen
-        img_original[top_left_y:bottom_right_y, top_left_x:bottom_right_x] = resized_face
-
-    # Devolver la imagen original con las caras procesadas reasignadas
-    return img_original
-
+def process_image_with_face_detection_and_age_classification(image_path, age_model):
+    model_face_detection = load_face_detection_model()
+    boxes = detect_faces(image_path, model_face_detection)
+    img = read_image(image_path)
+    return process_faces(img, boxes, age_model)
 
 @app.route('/process_images', methods=['POST'])
 def process_image():
-    #image_file = request.files['image']
-    #img = cv2.imdecode(np.frombuffer(image_file.read(), dtype=np.uint8), cv2.IMREAD_COLOR)
-
     data = request.get_json()
-    print(data)
+    image_path = data.get('image_path')
 
-    image_path = data['image_path']
-    print(image_path)
+    if not image_path or not os.path.exists(image_path):
+        return jsonify({'error': 'La imagen no existe o no se proporcionó image_path'}), 400
 
-    img = cv2.imread(image_path)
+    age_model = load_model('./modelos/modelo_mnet.keras')
 
-    if img is None:
-        return jsonify({'error': 'No se pudo leer la imagen'}), 400
+    try:
+        processed_image = process_image_with_face_detection_and_age_classification(image_path, age_model)
+        processed_image_name = os.path.basename(image_path).rsplit('.', 1)[0] + '_processed.jpg'
+        processed_image_path = os.path.join(PROCESSED_IMAGES_DIR, processed_image_name)
+        cv2.imwrite(processed_image_path, processed_image)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
-    model = './modelos/modelo_mnet.keras'
-    age_model = load_model(model)
-
-    processed_image = process_image_with_face_detection_and_age_classification(img, age_model)
-
-    return jsonify(processed_image), 200
-
+    return jsonify({'processed_image_path': processed_image_path}), 200
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5001)
