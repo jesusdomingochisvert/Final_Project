@@ -8,6 +8,9 @@ RUN pip install -r requirements.txt
 
 COPY . .
 
+RUN mkdir -p /app/shared
+
 EXPOSE 5000
 
+CMD ["chmod 777", "/app/shared"]
 CMD ["python", "./api_gateway/app.py"]

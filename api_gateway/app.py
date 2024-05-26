@@ -1,3 +1,5 @@
+import os
+
 import requests
 from flask import Flask, request, jsonify
 
@@ -12,8 +14,14 @@ def process_image():
         return "No image provided", 400
 
     image_file = request.files['image']
+    image_path = os.path.join('./shared', image_file.filename)
+    image_file.save(image_path)
 
-    response = requests.post(IA_SERVICE_URL, files={'image': (image_file.filename, image_file.read(), image_file.content_type)})
+    if not os.path.exists(image_path):
+        return "Image not saved correctly", 500
+
+    #response = requests.post(IA_SERVICE_URL, files={'image': (image_file.filename, image_file.read(), image_file.content_type)})
+    response = requests.post(IA_SERVICE_URL, json={"image_path": image_path})
 
     if response.status_code != 200:
         return jsonify({'error': 'Failed to process image', 'details': response.text}), response.status_code

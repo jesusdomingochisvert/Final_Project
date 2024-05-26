@@ -3,16 +3,19 @@ from ultralytics import YOLO
 import random
 
 def process_image_with_face_detection_and_age_simulation(image_path):
+
+    print(image_path)
+
     # Cargar el modelo YOLOv8 para detección de caras
     model_face_detection = YOLO("yolov8n-face.pt")
-    
+
     # Realizar la detección de caras en la imagen
     results = model_face_detection(image_path)
     boxes = results[0].boxes
-    
+
     # Leer la imagen original
     img_original = cv2.imread(image_path)
-    
+
     # Lista para almacenar las imágenes de caras redimensionadas
     resized_faces = []
     
@@ -73,8 +76,8 @@ def process_image_with_face_detection_and_age_simulation(image_path):
     return img_original
 
 # Ejemplo de uso de la función
-image_path = 'imagenes_prueba/meeting-business-leaders.jpg'
+image_path = 'imagen.jpg'
 processed_image = process_image_with_face_detection_and_age_simulation(image_path)
 
 # Guardar la imagen procesada
-cv2.imwrite("imagen_resultado/imagen_procesada.jpg", processed_image)
+cv2.imwrite("imagen.jpg", processed_image)

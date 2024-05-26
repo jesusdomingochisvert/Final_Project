@@ -4,7 +4,7 @@ import os
 import cv2
 from PIL import Image
 from ultralytics import YOLO
-from keras.models import load_model
+from keras.saving import load_model
 import tensorflow as tf
 from flask import Flask, request, jsonify
 import numpy as np
@@ -14,7 +14,7 @@ app = Flask(__name__)
 
 def process_image_with_face_detection_and_age_classification(image_path, age_model):
     # Cargar el modelo YOLOv8 para detección de caras
-    model_face_detection = YOLO("/app/PxCara_Finalizado/yolov8n-face.pt")
+    model_face_detection = YOLO("./shared/yolov8n-face.pt")
 
     # Realizar la detección de caras en la imagen
     results = model_face_detection(image_path)
@@ -87,16 +87,21 @@ def process_image_with_face_detection_and_age_classification(image_path, age_mod
 
 @app.route('/process_images', methods=['POST'])
 def process_image():
-    if 'image' not in request.files:
-        return "No image provided", 400
+    #image_file = request.files['image']
+    #img = cv2.imdecode(np.frombuffer(image_file.read(), dtype=np.uint8), cv2.IMREAD_COLOR)
 
-    image_file = request.files['image']
-    print(len(image_file.read()))
-    print(image_file)
-    print(image_file.read())
-    img = cv2.imdecode(np.frombuffer(image_file.read(), dtype=np.uint8), cv2.IMREAD_COLOR)
+    data = request.get_json()
+    print(data)
 
-    model = '/app/modelos/modelo_final_MNV2.h5'
+    image_path = data['image_path']
+    print(image_path)
+
+    img = cv2.imread(image_path)
+
+    if img is None:
+        return jsonify({'error': 'No se pudo leer la imagen'}), 400
+
+    model = './modelos/modelo_mnet.keras'
     age_model = load_model(model)
 
     processed_image = process_image_with_face_detection_and_age_classification(img, age_model)
