@@ -1,4 +1,6 @@
 import os
+import time
+
 import cv2
 from ultralytics import YOLO
 from keras.saving import load_model
@@ -116,14 +118,16 @@ def process_image():
         return jsonify({'error': 'La imagen no existe o no se proporciono image_path'}), 400
 
     try:
+        start_time = time.time()
         processed_image = process_image_with_face_detection_and_age_classification(image_path, age_model)
+        total_time = time.time() - start_time
         processed_image_name = os.path.basename(image_path).rsplit('.', 1)[0] + '_procesado.jpg'
         processed_image_path = os.path.join(PROCESSED_IMAGES_DIR, processed_image_name)
         cv2.imwrite(processed_image_path, processed_image)
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-    return jsonify({'processed_image_path': processed_image_path}), 200
+    return jsonify({'processed_image_path': processed_image_path, 'total_time': total_time}), 200
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5001)

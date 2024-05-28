@@ -34,9 +34,10 @@ def process_image():
 
     data = response.json()
     processed_image_path = data.get('processed_image_path')
+    total_time = data.get('total_time')
     relative_path = os.path.relpath(processed_image_path, PROCESSED_IMAGES_DIR)
 
-    return jsonify({'processed_image_path': f'/uploads/{relative_path}'}), 200
+    return jsonify({'processed_image_path': f'/uploads/{relative_path}', 'total_time': total_time}), 200
 
 @app.route('/uploads/<path:filename>')
 def download_file(filename):
