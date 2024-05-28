@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IA Menores</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link rel="icon" href="{{ url_for('static', filename='images/favicon.ico') }}" type="image/x-icon">
+</head>
+<body>
+    <header>
+        <img src="{{ url_for('static', filename='images/mislata.png') }}" alt="Mislata Logo" class="logo-left">
+        <h1>IA Deteccion menores de edad</h1>
+        <img src="{{ url_for('static', filename='images/gva.png') }}" alt="GVA Logo" class="logo-right">
+    </header>
+    <div id="drop-zone">
+        <div class="upload">
+            <input type="file" id="fileUpload" accept="image/jpeg, image/png">
+            <label for="fileUpload">Seleccionar imágenes</label>
+        </div>
+        <p>o arrastra las imágenes aquí</p>
+    </div>
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>

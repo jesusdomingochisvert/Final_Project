@@ -1,0 +1,65 @@
+body {
+    font-family: 'OCR A Std', monospace;
+    margin: 0;
+    background-color: #f4f4f4;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+header {
+    width: 100%;
+    text-align: center;
+    background-color: white;
+    padding: 20px 0;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 50px;
+}
+header img {
+    max-height: 50px;
+    width: auto;
+    margin: 0 8px;
+}
+header h1 {
+    flex-grow: 1;
+    margin: 0;
+    font-size: 1.5em;
+}
+#drop-zone {
+    border: 2px dashed #83ce83;
+    margin: 5px;
+    border-radius: 10;
+    width: 80%;
+    height: calc(100vh - 80px);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    color: #537e53;
+    font-size: 24px;
+    transition: background-color 0.3s;
+    text-align: center;
+}
+.upload {
+    display: inline-block;
+    margin-bottom: 20px;
+}
+.upload input[type="file"] {
+    display: none;
+}
+.upload label {
+    background-color: #007bff;
+    color: white;
+    padding: 15px 30px;
+    font-size: 16px;
+    cursor: pointer;
+    border-radius: 5px;
+}
+.upload label:hover {
+    background-color: #0056b3;
+}
+#drop-zone.dragging {
+    background-color: rgba(0, 255, 0, 0.3);
+}

@@ -20,5 +20,4 @@ RUN pip install -r ./PxCara_Finalizado/requirements.txt
 
 EXPOSE 5001
 
-CMD ["chmod 777", "/app/shared"]
 CMD ["python", "./PxCara_Finalizado/PxCara_Modelo.py"]
