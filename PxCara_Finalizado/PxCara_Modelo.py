@@ -79,7 +79,7 @@ def process_faces(img, boxes, age_model, extension_percentage=0.26):
         if is_minor:
             face = pixelate_face(face)
         else:
-            cv2.rectangle(face, (0, 0), (199, 199), (0, 255, 0), 2)
+            cv2.rectangle(face, (0, 0), (199, 199), (0, 255, 0), 2) # que hace esto (el '2' del final)?????????
 
         face = draw_prediction_text(face, prediction)
         resized_faces[i] = (face, (new_top_left_x, new_top_left_y, new_bottom_right_x, new_bottom_right_y))
