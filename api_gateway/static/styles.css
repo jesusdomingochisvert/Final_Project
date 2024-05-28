@@ -7,11 +7,11 @@ body {
     align-items: center;
 }
 header {
-    width: 100%;
+    width: 93%;
     text-align: center;
     background-color: white;
     padding: 20px 0;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.15); /* cambiar luego? */
     display: flex;
     justify-content: space-between;
     align-items: center;

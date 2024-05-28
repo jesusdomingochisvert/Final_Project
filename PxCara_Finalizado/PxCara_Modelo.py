@@ -7,6 +7,10 @@ import numpy as np
 
 app = Flask(__name__)
 
+# Declarar modelos
+model_face_detection = YOLO("./shared/yolov8n-face.pt")
+age_model = load_model('./modelos/modelo_mnet.keras')
+
 # Rutas de los directorios de entrada y salida
 INPUT_IMAGES_DIR = './shared/entrada'
 PROCESSED_IMAGES_DIR = './shared/salida'
@@ -14,10 +18,7 @@ for directory in [INPUT_IMAGES_DIR, PROCESSED_IMAGES_DIR]:
     if not os.path.exists(directory):
         os.makedirs(directory)
 
-def load_face_detection_model():
-    return YOLO("./shared/yolov8n-face.pt")
-
-def detect_faces(image_path, model_face_detection):
+def detect_faces(image_path):
     results = model_face_detection(image_path)
     return results[0].boxes
 
@@ -36,13 +37,11 @@ def pixelate_face(face, pixel_percentage=0.15):
     return cv2.resize(small, face.shape[:2][::-1], interpolation=cv2.INTER_NEAREST)
 
 def expand_box(box, img_width, img_height, expansion_factor=1.3):
-    # Calcula el nuevo tamaño de la caja expandiéndola por el factor dado
     width = box[2] - box[0]
     height = box[3] - box[1]
     new_width = width * expansion_factor
     new_height = height * expansion_factor
     
-    # Calcula las nuevas coordenadas de la caja, asegurándose de que no se salga de los límites de la imagen
     x1 = max(0, int(box[0] - (new_width - width) / 2))
     y1 = max(0, int(box[1] - (new_height - height) / 2))
     x2 = min(img_width, int(box[2] + (new_width - width) / 2))
@@ -50,26 +49,61 @@ def expand_box(box, img_width, img_height, expansion_factor=1.3):
     
     return [x1, y1, x2, y2]
 
-def process_faces(img, boxes, age_model):
-    img_height, img_width = img.shape[:2]
+def cuadrar_extender_area_cara(img, top_left_x, top_left_y, bottom_right_x, bottom_right_y, extension_percentage):
+    ancho = bottom_right_x - top_left_x
+    largo = bottom_right_y - top_left_y
+    max_side = max(ancho, largo)
+    center_x = top_left_x + ancho // 2
+    center_y = top_left_y + largo // 2
+
+    extended_side = int(max_side * (1 + extension_percentage))
+    new_top_left_x = max(0, center_x - extended_side // 2)
+    new_top_left_y = max(0, center_y - extended_side // 2)
+    new_bottom_right_x = min(img.shape[1], center_x + extended_side // 2)
+    new_bottom_right_y = min(img.shape[0], center_y + extended_side // 2)
+
+    return new_top_left_x, new_top_left_y, new_bottom_right_x, new_bottom_right_y
+
+def draw_prediction_text(face, prediction):
+    text = f"{prediction:.2f}"
+    text_size = cv2.getTextSize(text, cv2.FONT_HERSHEY_SIMPLEX, 1.5, 3)[0]
+    text_x = (face.shape[1] - text_size[0]) // 2
+    text_y = (face.shape[0] + text_size[1]) // 2
+    cv2.putText(face, text, (text_x, text_y), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (255, 255, 255), 3)
+    return face
+
+def process_faces(img, boxes, age_model, extension_percentage=0.5):
+    resized_faces = []
     for box in boxes:
         x1, y1, x2, y2 = map(int, box.xyxy[0])
-        expanded_box = expand_box([x1, y1, x2, y2], img_width, img_height)
-        x1, y1, x2, y2 = expanded_box
-        face = img[y1:y2, x1:x2]
-        face = resize_face(face)
+        new_top_left_x, new_top_left_y, new_bottom_right_x, new_bottom_right_y = cuadrar_extender_area_cara(
+            img, x1, y1, x2, y2, extension_percentage)
 
+        face = img[new_top_left_y:new_bottom_right_y, new_top_left_x:new_bottom_right_x]
+        face = resize_face(face)
+        resized_faces.append((face, (new_top_left_x, new_top_left_y, new_bottom_right_x, new_bottom_right_y)))
+
+    for i, (face, (new_top_left_x, new_top_left_y, new_bottom_right_x, new_bottom_right_y)) in enumerate(resized_faces):
         face_resized = np.expand_dims(face, axis=0)
-        is_minor = age_model.predict(face_resized)[0][0] > 0.5
+        prediction = age_model.predict(face_resized)[0][0]
+        is_minor = prediction > 0.5
+
         if is_minor:
-            pixelated_face = pixelate_face(face)
-            img[y1:y2, x1:x2] = cv2.resize(pixelated_face, (x2 - x1, y2 - y1))
+            face = pixelate_face(face)
+        else:
+            cv2.rectangle(face, (0, 0), (199, 199), (0, 255, 0), 2)
+
+        face = draw_prediction_text(face, prediction)
+        resized_faces[i] = (face, (new_top_left_x, new_top_left_y, new_bottom_right_x, new_bottom_right_y))
+
+    for i, (face, (new_top_left_x, new_top_left_y, new_bottom_right_x, new_bottom_right_y)) in enumerate(resized_faces):
+        resized_face = cv2.resize(face, (new_bottom_right_x - new_top_left_x, new_bottom_right_y - new_top_left_y))
+        img[new_top_left_y:new_bottom_right_y, new_top_left_x:new_bottom_right_x] = resized_face
 
     return img
 
 def process_image_with_face_detection_and_age_classification(image_path, age_model):
-    model_face_detection = load_face_detection_model()
-    boxes = detect_faces(image_path, model_face_detection)
+    boxes = detect_faces(image_path)
     img = read_image(image_path)
     return process_faces(img, boxes, age_model)
 
@@ -79,9 +113,7 @@ def process_image():
     image_path = data['image_path']
 
     if not os.path.exists(image_path):
-        return jsonify({'error': 'La imagen no existe o no se proporcionó image_path'}), 400
-
-    age_model = load_model('./modelos/modelo_mnet.keras')
+        return jsonify({'error': 'La imagen no existe o no se proporciono image_path'}), 400
 
     try:
         processed_image = process_image_with_face_detection_and_age_classification(image_path, age_model)

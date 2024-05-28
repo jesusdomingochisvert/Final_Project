@@ -14,7 +14,8 @@ COPY . .
 
 RUN mkdir -p /app/shared
 
-COPY ./PxCara_Finalizado/yolov8n-face.pt /app/shared
+COPY ./modelos/yolov8n-face.pt /app/shared
+COPY ./modelos/modelo_mnet.keras /app/shared
 
 RUN pip install -r ./PxCara_Finalizado/requirements.txt
 
