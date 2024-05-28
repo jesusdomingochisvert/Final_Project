@@ -1,5 +1,6 @@
 // const dropZone = document.getElementById('drop-zone');
 // const fileUpload = document.getElementById('fileUpload');
+// let isProcessing = false;
 
 // document.body.addEventListener('dragover', (event) => {
 //     event.preventDefault();
@@ -43,8 +44,11 @@
 // });
 
 // function handleFiles(files) {
+//     if (isProcessing) return; // limitar a un proceso
+
 //     for (const file of files) {
 //         if (file.type === 'image/jpeg' || file.type === 'image/png') {
+//             isProcessing = true;
 //             uploadAndProcessImage(file);
 //         } else {
 //             alert('Formato no admitido. Por favor, selecciona una imagen JPG o PNG.');
@@ -66,19 +70,24 @@
 //             alert('Error: ' + data.error);
 //         } else {
 //             const processedImagePath = data.processed_image_path;
-//             openImageInPopup(processedImagePath);
+//             const prcesedTotal_time = data.total_time;
+//             openImageInPopup(processedImagePath, prcesedTotal_time);
 //         }
 //     })
 //     .catch(error => {
 //         console.error('Error:', error);
 //         alert('Error al procesar la imagen.');
+//     })
+//     .finally(() => {
+//         isProcessing = false; // dejar uploads nuevos
 //     });
 // }
 
-// function openImageInPopup(imagePath) {
+// function openImageInPopup(imagePath, ttime) {
 //     const popup = window.open('', '_blank', 'width=800,height=600');
-//     popup.document.write(`<img src="${imagePath}" alt="Imagen Procesada" style="max-width: 100%; height: auto;">`);
+//     popup.document.write(`<h2>Tiempo ejecución: "${ttime}"</h2><br><img src="${imagePath}" alt="Imagen Procesada" style="max-width: 100%; height: auto;">`);
 // }
+
 
 const dropZone = document.getElementById('drop-zone');
 const fileUpload = document.getElementById('fileUpload');
@@ -126,7 +135,7 @@ fileUpload.addEventListener('change', () => {
 });
 
 function handleFiles(files) {
-    if (isProcessing) return; // Prevent processing if already processing
+    if (isProcessing) return; // Limitar a un proceso
 
     for (const file of files) {
         if (file.type === 'image/jpeg' || file.type === 'image/png') {
@@ -152,7 +161,8 @@ function uploadAndProcessImage(file) {
             alert('Error: ' + data.error);
         } else {
             const processedImagePath = data.processed_image_path;
-            openImageInPopup(processedImagePath);
+            const processedTotalTime = data.total_time;
+            openImageInPopup(processedImagePath, processedTotalTime);
         }
     })
     .catch(error => {
@@ -160,11 +170,11 @@ function uploadAndProcessImage(file) {
         alert('Error al procesar la imagen.');
     })
     .finally(() => {
-        isProcessing = false; // Allow new uploads after processing is complete
+        isProcessing = false; // Dejar subir nuevos
     });
 }
 
-function openImageInPopup(imagePath) {
+function openImageInPopup(imagePath, totalTime) {
     const popup = window.open('', '_blank', 'width=800,height=600');
-    popup.document.write(`<img src="${imagePath}" alt="Imagen Procesada" style="max-width: 100%; height: auto;">`);
+    popup.document.write(`<h2>Tiempo de ejecución: ${totalTime} segundos</h2><br><img src="${imagePath}" alt="Imagen Procesada" style="max-width: 100%; height: auto;">`);
 }

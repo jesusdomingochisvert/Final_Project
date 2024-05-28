@@ -1,7 +1,6 @@
 import os
-import time
-
 import cv2
+import time
 from ultralytics import YOLO
 from keras.saving import load_model
 from flask import Flask, request, jsonify
@@ -33,23 +32,10 @@ def read_image(image_path):
 def resize_face(face, size=(200, 200)):
     return cv2.resize(face, size) if face.shape[:2] != size else face
 
-def pixelate_face(face, pixel_percentage=0.15):
+def pixelate_face(face, pixel_percentage=0.1):
     pixel_size = max(1, int(min(face.shape[:2]) * pixel_percentage))
     small = cv2.resize(face, (face.shape[1] // pixel_size, face.shape[0] // pixel_size), interpolation=cv2.INTER_LINEAR)
     return cv2.resize(small, face.shape[:2][::-1], interpolation=cv2.INTER_NEAREST)
-
-def expand_box(box, img_width, img_height, expansion_factor=1.3):
-    width = box[2] - box[0]
-    height = box[3] - box[1]
-    new_width = width * expansion_factor
-    new_height = height * expansion_factor
-    
-    x1 = max(0, int(box[0] - (new_width - width) / 2))
-    y1 = max(0, int(box[1] - (new_height - height) / 2))
-    x2 = min(img_width, int(box[2] + (new_width - width) / 2))
-    y2 = min(img_height, int(box[3] + (new_height - height) / 2))
-    
-    return [x1, y1, x2, y2]
 
 def cuadrar_extender_area_cara(img, top_left_x, top_left_y, bottom_right_x, bottom_right_y, extension_percentage):
     ancho = bottom_right_x - top_left_x
@@ -74,7 +60,7 @@ def draw_prediction_text(face, prediction):
     cv2.putText(face, text, (text_x, text_y), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (255, 255, 255), 3)
     return face
 
-def process_faces(img, boxes, age_model, extension_percentage=0.5):
+def process_faces(img, boxes, age_model, extension_percentage=0.26):
     resized_faces = []
     for box in boxes:
         x1, y1, x2, y2 = map(int, box.xyxy[0])
@@ -88,7 +74,7 @@ def process_faces(img, boxes, age_model, extension_percentage=0.5):
     for i, (face, (new_top_left_x, new_top_left_y, new_bottom_right_x, new_bottom_right_y)) in enumerate(resized_faces):
         face_resized = np.expand_dims(face, axis=0)
         prediction = age_model.predict(face_resized)[0][0]
-        is_minor = prediction > 0.5
+        is_minor = prediction > 0.4
 
         if is_minor:
             face = pixelate_face(face)
@@ -105,9 +91,14 @@ def process_faces(img, boxes, age_model, extension_percentage=0.5):
     return img
 
 def process_image_with_face_detection_and_age_classification(image_path, age_model):
+    start_time = time.time()
     boxes = detect_faces(image_path)
     img = read_image(image_path)
-    return process_faces(img, boxes, age_model)
+    img = process_faces(img, boxes, age_model)
+    end_time = time.time()
+    total_time = end_time - start_time
+    print(total_time)
+    return img, total_time
 
 @app.route('/process_images', methods=['POST'])
 def process_image():
@@ -118,9 +109,7 @@ def process_image():
         return jsonify({'error': 'La imagen no existe o no se proporciono image_path'}), 400
 
     try:
-        start_time = time.time()
-        processed_image = process_image_with_face_detection_and_age_classification(image_path, age_model)
-        total_time = time.time() - start_time
+        processed_image, total_time = process_image_with_face_detection_and_age_classification(image_path, age_model)
         processed_image_name = os.path.basename(image_path).rsplit('.', 1)[0] + '_procesado.jpg'
         processed_image_path = os.path.join(PROCESSED_IMAGES_DIR, processed_image_name)
         cv2.imwrite(processed_image_path, processed_image)

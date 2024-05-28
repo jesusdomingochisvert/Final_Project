@@ -27,6 +27,9 @@ header h1 {
     margin: 0;
     font-size: 1.5em;
 }
+h2 {
+    text-align: center;
+  }
 #drop-zone {
     border: 2px dashed #83ce83;
     margin: 5px;
