@@ -7,7 +7,7 @@ body {
     align-items: center;
 }
 header {
-    width: 93%;
+    width: 94%;
     text-align: center;
     background-color: white;
     padding: 20px 0;
@@ -32,10 +32,10 @@ h2 {
   }
 #drop-zone {
     border: 2px dashed #83ce83;
-    margin: 5px;
     border-radius: 10;
+    margin-top: 20px;
     width: 80%;
-    height: calc(100vh - 80px);
+    height: calc(95vh - 70px);
     display: flex;
     flex-direction: column;
     justify-content: center;
