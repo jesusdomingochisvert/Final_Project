@@ -20,6 +20,7 @@ Siga los pasos a continuación para configurar y ejecutar el proyecto:
 
 1. Clonar el repositorio `git clone https://github.com/jesusdomingochisvert/Final_Project.git`.
 2. Construir y ejecutar los contenedores Docker utilizando docker-compose `docker-compose up --build`.
+3. La conexion y uso del servicio se realizaria atraves de la direccion web *http://localhost:5000/*.
 
 ## Modelos de IA Utilizados
 
