@@ -97,7 +97,7 @@ def process_image_with_face_detection_and_age_classification(image_path, age_mod
     img = process_faces(img, boxes, age_model)
     end_time = time.time()
     total_time = end_time - start_time
-    print(total_time)
+    print(f'Tiempo ejecucion: {total_time}') # -> en proceso de desarollo
     return img, total_time
 
 @app.route('/process_images', methods=['POST'])
